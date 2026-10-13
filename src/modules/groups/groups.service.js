@@ -66,10 +66,11 @@ class GroupsService {
     }
 
     const membersRes = await query(
-      `SELECT u.id, u.display_name, u.email_normalized, u.phone_e164, u.avatar_url, gm.role, gm.joined_at
+      `SELECT u.id, u.display_name, u.email_normalized, u.phone_e164, u.avatar_url, COALESCE(u.is_manual, false) AS is_manual, gm.role, gm.joined_at
        FROM group_members gm
        JOIN users u ON u.id = gm.user_id
-       WHERE gm.group_id = $1 AND gm.status = 'active'`,
+       WHERE gm.group_id = $1 AND gm.status = 'active'
+       ORDER BY gm.joined_at ASC`,
       [groupId]
     );
 
@@ -78,6 +79,180 @@ class GroupsService {
       userRole: membership.rows[0].role,
       members: membersRes.rows
     };
+  }
+
+  /**
+   * Add a member manually to the group (registers a non-app offline profile or links existing registered user)
+   */
+  static async addMember(groupId, callerUserId, { displayName, phone = null, email = null }) {
+    // 1. Check caller membership
+    const callerMem = await query(
+      `SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2 AND status = 'active'`,
+      [groupId, callerUserId]
+    );
+
+    if (callerMem.rows.length === 0) {
+      throw new AppError('Forbidden: You are not a member of this group.', 403);
+    }
+
+    const cleanName = displayName ? displayName.trim() : '';
+    const cleanEmail = email && email.trim() ? email.trim().toLowerCase() : null;
+    const cleanPhone = phone && phone.trim() ? phone.trim() : null;
+
+    if (!cleanName) {
+      throw new AppError('Member name is required.', 400);
+    }
+
+    return withTransaction(async (client) => {
+      let targetUser = null;
+
+      // 2. Check if a user with this email or phone already exists
+      if (cleanEmail) {
+        const existingEmail = await client.query(
+          `SELECT id, display_name, email_normalized, phone_e164, avatar_url, COALESCE(is_manual, false) AS is_manual
+           FROM users WHERE email_normalized = $1`,
+          [cleanEmail]
+        );
+        if (existingEmail.rows.length > 0) {
+          targetUser = existingEmail.rows[0];
+        }
+      }
+
+      if (!targetUser && cleanPhone) {
+        const existingPhone = await client.query(
+          `SELECT id, display_name, email_normalized, phone_e164, avatar_url, COALESCE(is_manual, false) AS is_manual
+           FROM users WHERE phone_e164 = $1`,
+          [cleanPhone]
+        );
+        if (existingPhone.rows.length > 0) {
+          targetUser = existingPhone.rows[0];
+        }
+      }
+
+      // 3. If user exists, add them to group (or reactivate)
+      if (targetUser) {
+        const existingMem = await client.query(
+          `SELECT role, status FROM group_members WHERE group_id = $1 AND user_id = $2`,
+          [groupId, targetUser.id]
+        );
+
+        if (existingMem.rows.length > 0) {
+          if (existingMem.rows[0].status === 'active') {
+            throw new AppError(`"${targetUser.display_name}" is already a member of this group.`, 409);
+          }
+          await client.query(
+            `UPDATE group_members SET status = 'active', joined_at = CURRENT_TIMESTAMP
+             WHERE group_id = $1 AND user_id = $2`,
+            [groupId, targetUser.id]
+          );
+        } else {
+          await client.query(
+            `INSERT INTO group_members (group_id, user_id, role, status)
+             VALUES ($1, $2, 'member', 'active')`,
+            [groupId, targetUser.id]
+          );
+        }
+
+        return {
+          id: targetUser.id,
+          displayName: targetUser.display_name,
+          email: targetUser.email_normalized,
+          phone: targetUser.phone_e164,
+          isManual: targetUser.is_manual,
+          role: 'member',
+          message: `Added ${targetUser.display_name} to the group.`
+        };
+      }
+
+      // 4. Create new manual/offline user profile (does not need app or password)
+      const placeholderHash = crypto.randomBytes(32).toString('hex');
+      const insertUserRes = await client.query(
+        `INSERT INTO users (display_name, email_normalized, phone_e164, password_hash, is_manual, created_by_user_id)
+         VALUES ($1, $2, $3, $4, true, $5)
+         RETURNING id, display_name, email_normalized, phone_e164, avatar_url, is_manual, created_at`,
+        [cleanName, cleanEmail, cleanPhone, placeholderHash, callerUserId]
+      );
+      const newUser = insertUserRes.rows[0];
+
+      await client.query(
+        `INSERT INTO group_members (group_id, user_id, role, status)
+         VALUES ($1, $2, 'member', 'active')`,
+        [groupId, newUser.id]
+      );
+
+      return {
+        id: newUser.id,
+        displayName: newUser.display_name,
+        email: newUser.email_normalized,
+        phone: newUser.phone_e164,
+        isManual: true,
+        role: 'member',
+        message: `Added ${newUser.display_name} as a manual member.`
+      };
+    });
+  }
+
+  /**
+   * Remove a member from group (or mark left if historical debts exist)
+   */
+  static async removeMember(groupId, callerUserId, memberId) {
+    return withTransaction(async (client) => {
+      const callerMem = await client.query(
+        `SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2 AND status = 'active'`,
+        [groupId, callerUserId]
+      );
+      if (callerMem.rows.length === 0) {
+        throw new AppError('Forbidden: You are not a member of this group.', 403);
+      }
+
+      const targetMem = await client.query(
+        `SELECT gm.role, gm.status, u.display_name, COALESCE(u.is_manual, false) AS is_manual
+         FROM group_members gm
+         JOIN users u ON u.id = gm.user_id
+         WHERE gm.group_id = $1 AND gm.user_id = $2`,
+        [groupId, memberId]
+      );
+      if (targetMem.rows.length === 0) {
+        throw new AppError('Member not found in this group.', 404);
+      }
+
+      const isOwnerOrAdmin = ['owner', 'admin'].includes(callerMem.rows[0].role);
+      const isSelf = callerUserId === memberId;
+      const isManual = targetMem.rows[0].is_manual;
+
+      if (!isOwnerOrAdmin && !isSelf && !isManual) {
+        throw new AppError('Only group owners or admins can remove other members.', 403);
+      }
+
+      // Check if target is in expenses
+      const hasExpenses = await client.query(
+        `SELECT 1 FROM expense_splits es
+         JOIN expenses e ON e.id = es.expense_id
+         WHERE e.group_id = $1 AND es.user_id = $2 AND e.status = 'active'
+         UNION
+         SELECT 1 FROM expense_payers ep
+         JOIN expenses e ON e.id = ep.expense_id
+         WHERE e.group_id = $1 AND ep.user_id = $2 AND e.status = 'active'
+         LIMIT 1`,
+        [groupId, memberId]
+      );
+
+      if (hasExpenses.rows.length > 0) {
+        await client.query(
+          `UPDATE group_members SET status = 'left', left_at = CURRENT_TIMESTAMP
+           WHERE group_id = $1 AND user_id = $2`,
+          [groupId, memberId]
+        );
+        return { message: `${targetMem.rows[0].display_name} has expense history and was marked as left.` };
+      }
+
+      await client.query(
+        `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
+        [groupId, memberId]
+      );
+
+      return { message: `${targetMem.rows[0].display_name} was removed from the group.` };
+    });
   }
 
   /**

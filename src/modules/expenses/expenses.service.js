@@ -240,7 +240,7 @@ class ExpensesService {
 
     // Get all active members
     const membersRes = await query(
-      `SELECT u.id, u.display_name, u.email_normalized, u.phone_e164, u.avatar_url
+      `SELECT u.id, u.display_name, u.email_normalized, u.phone_e164, u.avatar_url, COALESCE(u.is_manual, false) AS is_manual
        FROM group_members gm
        JOIN users u ON u.id = gm.user_id
        WHERE gm.group_id = $1 AND gm.status = 'active'`,

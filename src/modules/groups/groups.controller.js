@@ -46,6 +46,25 @@ class GroupsController {
       next(err);
     }
   }
+
+  static async addMember(req, res, next) {
+    try {
+      const result = await GroupsService.addMember(req.params.groupId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async removeMember(req, res, next) {
+    try {
+      const result = await GroupsService.removeMember(req.params.groupId, req.user.id, req.params.memberId);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = GroupsController;
+

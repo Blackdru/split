@@ -1,9 +1,11 @@
 const { Pool } = require('pg');
 const config = require('../config/env');
 
+const isSupabase = config.databaseUrl.includes('supabase.co') || config.databaseUrl.includes('supabase.com') || config.databaseUrl.includes('pooler.supabase.com');
+
 const pool = new Pool({
   connectionString: config.databaseUrl,
-  ssl: config.nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: isSupabase || config.nodeEnv === 'production' ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000

@@ -12,7 +12,15 @@ const createInviteSchema = z.object({
   expiryDays: z.number().int().min(1).max(30).default(7)
 });
 
+const addMemberSchema = z.object({
+  displayName: z.string().min(1, 'Member name is required').max(100),
+  phone: z.string().max(25).optional().nullable(),
+  email: z.string().email().optional().nullable().or(z.literal(''))
+});
+
 module.exports = {
   createGroupSchema,
-  createInviteSchema
+  createInviteSchema,
+  addMemberSchema
 };
+

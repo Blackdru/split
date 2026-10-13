@@ -55,17 +55,25 @@ class AuthService {
       throw new AppError('Either email or phone is required to register.', 400);
     }
 
-    // Check duplicate
+    // Check duplicate or claimable manual account
+    let manualAccountToUpgrade = null;
+
     if (emailNormalized) {
-      const existing = await query('SELECT id FROM users WHERE email_normalized = $1', [emailNormalized]);
+      const existing = await query('SELECT id, is_manual FROM users WHERE email_normalized = $1', [emailNormalized]);
       if (existing.rows.length > 0) {
-        throw new AppError('An account with this email already exists.', 409);
+        if (!existing.rows[0].is_manual) {
+          throw new AppError('An account with this email already exists.', 409);
+        }
+        manualAccountToUpgrade = existing.rows[0].id;
       }
     }
     if (phoneE164) {
-      const existingPhone = await query('SELECT id FROM users WHERE phone_e164 = $1', [phoneE164]);
+      const existingPhone = await query('SELECT id, is_manual FROM users WHERE phone_e164 = $1', [phoneE164]);
       if (existingPhone.rows.length > 0) {
-        throw new AppError('An account with this phone number already exists.', 409);
+        if (!existingPhone.rows[0].is_manual) {
+          throw new AppError('An account with this phone number already exists.', 409);
+        }
+        manualAccountToUpgrade = existingPhone.rows[0].id;
       }
     }
 
@@ -77,15 +85,28 @@ class AuthService {
       parallelism: 1
     });
 
-    // Insert user with raw parameterized SQL
-    const insertResult = await query(
-      `INSERT INTO users (display_name, email_normalized, phone_e164, password_hash, preferred_currency)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, display_name, email_normalized, phone_e164, preferred_currency, created_at`,
-      [displayName, emailNormalized, phoneE164, passwordHash, preferredCurrency]
-    );
-
-    const newUser = insertResult.rows[0];
+    let newUser;
+    if (manualAccountToUpgrade) {
+      // Upgrade previously manual member into registered account
+      const updateResult = await query(
+        `UPDATE users
+         SET display_name = $1, email_normalized = COALESCE($2, email_normalized), phone_e164 = COALESCE($3, phone_e164),
+             password_hash = $4, preferred_currency = $5, is_manual = false, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $6
+         RETURNING id, display_name, email_normalized, phone_e164, preferred_currency, created_at`,
+        [displayName, emailNormalized, phoneE164, passwordHash, preferredCurrency, manualAccountToUpgrade]
+      );
+      newUser = updateResult.rows[0];
+    } else {
+      // Insert user with raw parameterized SQL
+      const insertResult = await query(
+        `INSERT INTO users (display_name, email_normalized, phone_e164, password_hash, preferred_currency, is_manual)
+         VALUES ($1, $2, $3, $4, $5, false)
+         RETURNING id, display_name, email_normalized, phone_e164, preferred_currency, created_at`,
+        [displayName, emailNormalized, phoneE164, passwordHash, preferredCurrency]
+      );
+      newUser = insertResult.rows[0];
+    }
 
     // Issue initial tokens
     const { accessToken, rawRefreshToken, tokenHash, familyId, expiresAt } = this.generateTokens(newUser);
