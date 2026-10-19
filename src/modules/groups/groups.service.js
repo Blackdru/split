@@ -33,13 +33,16 @@ class GroupsService {
    */
   static async getUserGroups(userId) {
     const res = await query(
-      `SELECT g.id, g.name, g.mode, g.base_currency, g.description, g.status, gm.role, g.created_at,
+      `SELECT g.id, g.name, g.mode, g.base_currency, g.description, g.status,
+              COALESCE(MAX(gm.role), CASE WHEN g.created_by = $1 THEN 'owner' ELSE 'member' END) AS role,
+              g.created_at,
               COUNT(DISTINCT m.user_id)::int AS member_count
        FROM groups g
-       JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = $1 AND gm.status = 'active'
+       LEFT JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = $1 AND gm.status = 'active'
        LEFT JOIN group_members m ON m.group_id = g.id AND m.status = 'active'
        WHERE g.status != 'closed'
-       GROUP BY g.id, gm.role
+         AND (gm.user_id = $1 OR g.created_by = $1)
+       GROUP BY g.id, g.name, g.mode, g.base_currency, g.description, g.status, g.created_by, g.created_at, g.updated_at
        ORDER BY g.updated_at DESC`,
       [userId]
     );
