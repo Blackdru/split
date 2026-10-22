@@ -6,10 +6,14 @@ const { createGroupSchema, createInviteSchema, addMemberSchema } = require('./gr
 
 const router = Router();
 
+// Public invitation preview route (no auth required)
+router.get('/invitations/:token/preview', GroupsController.previewInvitation);
+
 router.use(authenticate);
 
 router.post('/', validate(createGroupSchema), GroupsController.createGroup);
 router.get('/', GroupsController.getUserGroups);
+router.get('/dashboard/summary', GroupsController.getUserDashboardSummary);
 router.get('/:groupId', GroupsController.getGroupDetails);
 router.post('/:groupId/invitations', validate(createInviteSchema), GroupsController.createInvitation);
 router.post('/invitations/:token/accept', GroupsController.acceptInvitation);

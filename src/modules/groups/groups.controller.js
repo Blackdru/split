@@ -19,6 +19,15 @@ class GroupsController {
     }
   }
 
+  static async getUserDashboardSummary(req, res, next) {
+    try {
+      const summary = await GroupsService.getUserDashboardSummary(req.user.id);
+      res.status(200).json({ success: true, data: summary });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async getGroupDetails(req, res, next) {
     try {
       const details = await GroupsService.getGroupDetails(req.params.groupId, req.user.id);
@@ -64,7 +73,50 @@ class GroupsController {
       next(err);
     }
   }
+
+  static async previewInvitation(req, res, next) {
+    try {
+      const preview = await GroupsService.getInvitationPreview(req.params.token);
+      res.status(200).json({ success: true, data: preview });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async renderInviteLanding(req, res, next) {
+    try {
+      const { renderInvitePage } = require('./invite-page.template');
+      const token = req.params.token;
+      const preview = await GroupsService.getInvitationPreview(token);
+
+      const baseUrl = process.env.APP_BASE_URL || 'https://split.udhaar.store';
+      const webUrl = `${baseUrl}/join/${token}`;
+      const playStorePackage = process.env.PLAY_STORE_PACKAGE || 'com.budrock.splitboss';
+      const playStoreUrl = `https://play.google.com/store/apps/details?id=${playStorePackage}&referrer=invite_token%3D${encodeURIComponent(token)}`;
+      const appSchemeUrl = `splitboss://join/${token}`;
+
+      // If client requests JSON explicitly, return JSON
+      if (req.headers.accept && req.headers.accept.includes('application/json') && !req.headers.accept.includes('text/html')) {
+        return res.status(200).json({ success: true, data: preview });
+      }
+
+      // Return high-converting branded HTML landing page
+      const html = renderInvitePage({
+        preview,
+        token,
+        playStoreUrl,
+        appSchemeUrl,
+        webUrl
+      });
+
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.status(preview.valid ? 200 : 404).send(html);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = GroupsController;
+
 

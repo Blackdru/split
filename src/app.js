@@ -8,7 +8,19 @@ const { errorHandler } = require('./middleware/error-handler');
 const app = express();
 
 // Security middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  })
+);
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 
@@ -32,6 +44,14 @@ const authLimiter = rateLimit({
 });
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
+
+// Public Web Invite Landing Pages
+const GroupsController = require('./modules/groups/groups.controller');
+app.get('/join/:token', GroupsController.renderInviteLanding);
+app.get('/join', (req, res) => {
+  const pkg = process.env.PLAY_STORE_PACKAGE || 'com.budrock.splitboss';
+  res.redirect(`https://play.google.com/store/apps/details?id=${pkg}`);
+});
 
 // Mount API routes
 app.use('/api/v1', apiRoutes);
