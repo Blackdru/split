@@ -501,9 +501,14 @@ function renderPrivacyPage({ baseUrl, iconUrl }) {
           <p>
             You may request complete and permanent deletion of your account, personal details, and associated group memberships at any time. Upon receiving your verified request, all personal identifiers, email associations, and profile records are expunged from our active databases within 14 business days.
           </p>
-          <a href="mailto:privacy@splitboss.app?subject=Account%20Deletion%20Request%20-%20Split%20Boss" class="btn-contact">
-            Request Data Deletion via Email
-          </a>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
+            <a href="${effectiveBaseUrl}/contact" class="btn-contact" style="background: var(--brand-primary); color: #FFFFFF;">
+              Submit Online Deletion Request
+            </a>
+            <a href="mailto:privacy@splitboss.app?subject=Account%20Deletion%20Request%20-%20Split%20Boss" class="btn-contact">
+              Request via Email
+            </a>
+          </div>
         </div>
       </div>
 
@@ -524,6 +529,7 @@ function renderPrivacyPage({ baseUrl, iconUrl }) {
         <ul>
           <li><strong>Application Name:</strong> Split Boss</li>
           <li><strong>Platform Website:</strong> <a href="${effectiveBaseUrl}" style="color: var(--brand-mint-text);">${effectiveBaseUrl}</a></li>
+          <li><strong>Account & Data Deletion Form:</strong> <a href="${effectiveBaseUrl}/contact" style="color: var(--brand-mint-text);">${effectiveBaseUrl}/contact</a></li>
           <li><strong>Grievance & Privacy Inquiries:</strong> <a href="mailto:privacy@splitboss.app" style="color: var(--brand-mint-text);">privacy@splitboss.app</a></li>
           <li><strong>Support Email:</strong> <a href="mailto:support@split.udhaar.store" style="color: var(--brand-mint-text);">support@split.udhaar.store</a></li>
           <li><strong>Jurisdiction:</strong> Republic of India</li>
@@ -531,7 +537,7 @@ function renderPrivacyPage({ baseUrl, iconUrl }) {
       </div>
 
       <footer class="policy-footer">
-        <p>© 2026 Split Boss. All rights reserved. • <a href="${effectiveBaseUrl}/privacy">Privacy Policy</a> • <a href="${effectiveBaseUrl}">Home</a></p>
+        <p>© 2026 Split Boss. All rights reserved. • <a href="${effectiveBaseUrl}/privacy">Privacy Policy</a> • <a href="${effectiveBaseUrl}/contact">Data & Account Deletion</a> • <a href="${effectiveBaseUrl}">Home</a></p>
       </footer>
     </main>
   </div>

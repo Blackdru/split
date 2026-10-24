@@ -19,6 +19,7 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrcAttr: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "https:"],
@@ -28,6 +29,7 @@ app.use(
 );
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Global Rate Limiting
 const globalLimiter = rateLimit({
@@ -49,6 +51,88 @@ const authLimiter = rateLimit({
 });
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
+
+// Contact / Deletion Rate Limiter
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // max 20 deletion/contact requests per IP per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: { message: 'Too many requests, please try again later.' } }
+});
+
+// Public Contact & Account / Data Deletion Request Page
+const { renderContactPage } = require('./modules/legal/contact-page.template');
+const DeletionRequestService = require('./modules/legal/deletion-request.service');
+
+const handleContactPage = (req, res) => {
+  const baseUrl = process.env.APP_BASE_URL || 'https://split.udhaar.store';
+  const html = renderContactPage({
+    baseUrl,
+    iconUrl: `${baseUrl}/static/ic_launcher-web.png`
+  });
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send(html);
+};
+app.get('/contact', handleContactPage);
+app.get('/delete-account', handleContactPage);
+app.get('/data-deletion', handleContactPage);
+
+const handleDeletionSubmission = async (req, res, next) => {
+  try {
+    const { name, email, phone, requestType, deleteAccount, deleteData, reason } = req.body;
+    const ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    const record = await DeletionRequestService.createRequest({
+      name,
+      email,
+      phone,
+      requestType,
+      deleteAccount,
+      deleteData,
+      reason,
+      ipAddress,
+      userAgent
+    });
+
+    const isJson = req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'));
+    if (isJson) {
+      return res.status(201).json({
+        success: true,
+        message: 'Your deletion request has been recorded successfully.',
+        data: record
+      });
+    }
+
+    const baseUrl = process.env.APP_BASE_URL || 'https://split.udhaar.store';
+    const html = renderContactPage({
+      baseUrl,
+      iconUrl: `${baseUrl}/static/ic_launcher-web.png`,
+      successData: record
+    });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(200).send(html);
+  } catch (err) {
+    const isJson = req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'));
+    if (isJson) {
+      return res.status(err.statusCode || 400).json({
+        success: false,
+        error: { message: err.message || 'Failed to submit deletion request.' }
+      });
+    }
+    const baseUrl = process.env.APP_BASE_URL || 'https://split.udhaar.store';
+    const html = renderContactPage({
+      baseUrl,
+      iconUrl: `${baseUrl}/static/ic_launcher-web.png`,
+      errorMessage: err.message || 'Failed to submit deletion request.'
+    });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(err.statusCode || 400).send(html);
+  }
+};
+app.post('/contact', contactLimiter, handleDeletionSubmission);
+app.post('/api/v1/contact/deletion-request', contactLimiter, handleDeletionSubmission);
 
 // Public Legal & Policy Pages (Required for Google Play Store compliance)
 const { renderPrivacyPage } = require('./modules/legal/privacy-page.template');

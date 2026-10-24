@@ -986,6 +986,7 @@ function renderHomePage({ baseUrl, playStoreUrl, iconUrl }) {
         <a href="#features">Features</a>
         <a href="${effectivePlayStoreUrl}" target="_blank" rel="noopener">Google Play</a>
         <a href="/privacy">Privacy Policy</a>
+        <a href="/contact">Contact & Deletion</a>
         <a href="mailto:support@split.udhaar.store">Support</a>
       </div>
 
