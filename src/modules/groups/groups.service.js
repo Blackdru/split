@@ -531,6 +531,128 @@ class GroupsService {
       }
     };
   }
+
+  /**
+   * Get all user transactions (expenses and settlements, both spent and received)
+   */
+  static async getUserTransactions(userId, options = {}) {
+    const MoneyService = require('../../services/money');
+    const limit = Math.min(parseInt(options.limit || '100', 10), 200);
+
+    const res = await query(
+      `WITH user_expenses AS (
+         SELECT 
+           e.id,
+           'expense'::text AS txn_type,
+           e.description AS title,
+           g.id AS group_id,
+           g.name AS group_name,
+           e.category,
+           e.expense_date,
+           e.created_at,
+           e.total_minor,
+           COALESCE(ep.amount_minor, 0) AS user_paid_minor,
+           COALESCE(es.share_minor, 0) AS user_share_minor,
+           payer_user.display_name AS payer_name,
+           CASE 
+             WHEN COALESCE(ep.amount_minor, 0) > 0 THEN 'spent'
+             ELSE 'received'
+           END AS direction,
+           'completed'::text AS status
+         FROM expenses e
+         JOIN groups g ON g.id = e.group_id
+         LEFT JOIN expense_payers ep ON ep.expense_id = e.id AND ep.user_id = $1
+         LEFT JOIN expense_splits es ON es.expense_id = e.id AND es.user_id = $1
+         LEFT JOIN LATERAL (
+           SELECT u.display_name 
+           FROM expense_payers ep2 
+           JOIN users u ON u.id = ep2.user_id 
+           WHERE ep2.expense_id = e.id 
+           LIMIT 1
+         ) payer_user ON true
+         WHERE e.status = 'active' 
+           AND e.deleted_at IS NULL
+           AND (ep.user_id IS NOT NULL OR es.user_id IS NOT NULL)
+       ),
+       user_settlements AS (
+         SELECT
+           s.id,
+           'settlement'::text AS txn_type,
+           CASE 
+             WHEN s.payer_user_id = $1 THEN 'Settlement to ' || payee_u.display_name
+             ELSE 'Settlement from ' || payer_u.display_name
+           END AS title,
+           g.id AS group_id,
+           g.name AS group_name,
+           'settlement'::text AS category,
+           s.created_at::date AS expense_date,
+           s.created_at,
+           s.amount_minor AS total_minor,
+           CASE WHEN s.payer_user_id = $1 THEN s.amount_minor ELSE 0 END AS user_paid_minor,
+           CASE WHEN s.payee_user_id = $1 THEN s.amount_minor ELSE 0 END AS user_share_minor,
+           payer_u.display_name AS payer_name,
+           CASE 
+             WHEN s.payer_user_id = $1 THEN 'spent'
+             ELSE 'received'
+           END AS direction,
+           s.status::text AS status
+         FROM settlements s
+         JOIN groups g ON g.id = s.group_id
+         JOIN users payer_u ON payer_u.id = s.payer_user_id
+         JOIN users payee_u ON payee_u.id = s.payee_user_id
+         WHERE (s.payer_user_id = $1 OR s.payee_user_id = $1)
+           AND s.status != 'cancelled'
+       ),
+       combined AS (
+         SELECT * FROM user_expenses
+         UNION ALL
+         SELECT * FROM user_settlements
+       )
+       SELECT * FROM combined
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [userId, limit]
+    );
+
+    return res.rows.map((row) => {
+      const totalMinor = BigInt(row.total_minor);
+      const userPaidMinor = BigInt(row.user_paid_minor);
+      const userShareMinor = BigInt(row.user_share_minor);
+
+      let effectiveMinor = userPaidMinor > 0n ? userPaidMinor : userShareMinor;
+      if (effectiveMinor === 0n) effectiveMinor = totalMinor;
+
+      return {
+        id: row.id,
+        type: row.txn_type,
+        direction: row.direction,
+        title: row.title,
+        groupName: row.group_name,
+        groupId: row.group_id,
+        category: row.category,
+        date: row.expense_date,
+        createdAt: row.created_at,
+        payerName: row.payer_name,
+        status: row.status,
+        totalAmount: {
+          minor: totalMinor.toString(),
+          formatted: MoneyService.formatINR(totalMinor)
+        },
+        userPaid: {
+          minor: userPaidMinor.toString(),
+          formatted: MoneyService.formatINR(userPaidMinor)
+        },
+        userShare: {
+          minor: userShareMinor.toString(),
+          formatted: MoneyService.formatINR(userShareMinor)
+        },
+        amount: {
+          minor: effectiveMinor.toString(),
+          formatted: MoneyService.formatINR(effectiveMinor)
+        }
+      };
+    });
+  }
 }
 
 module.exports = GroupsService;

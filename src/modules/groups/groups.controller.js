@@ -28,6 +28,15 @@ class GroupsController {
     }
   }
 
+  static async getUserTransactions(req, res, next) {
+    try {
+      const transactions = await GroupsService.getUserTransactions(req.user.id, req.query);
+      res.status(200).json({ success: true, data: transactions });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async getGroupDetails(req, res, next) {
     try {
       const details = await GroupsService.getGroupDetails(req.params.groupId, req.user.id);

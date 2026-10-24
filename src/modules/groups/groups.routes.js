@@ -14,6 +14,7 @@ router.use(authenticate);
 router.post('/', validate(createGroupSchema), GroupsController.createGroup);
 router.get('/', GroupsController.getUserGroups);
 router.get('/dashboard/summary', GroupsController.getUserDashboardSummary);
+router.get('/dashboard/transactions', GroupsController.getUserTransactions);
 router.get('/:groupId', GroupsController.getGroupDetails);
 router.post('/:groupId/invitations', validate(createInviteSchema), GroupsController.createInvitation);
 router.post('/invitations/:token/accept', GroupsController.acceptInvitation);
