@@ -9,12 +9,12 @@ try {
     cachedIconBase64 = `data:image/png;base64,${fs.readFileSync(iconPath).toString('base64')}`;
   }
 } catch (e) {
-  // Fallback to static URL if filesystem read fails
+  // Fallback to static URL
 }
 
 /**
- * Branded Responsive Landing Page for Split Boss Group Invitations
- * Tailored to match the Mint & Emerald Neo-Fintech App Icon Theme
+ * Clean White / Light-Themed Responsive Invite Page for Split Boss
+ * Minimal, executive, distraction-free aesthetic with only essential branding
  */
 function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, baseUrl, iconUrl }) {
   const isValid = preview && preview.valid;
@@ -23,22 +23,12 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
 
   const effectiveBaseUrl = baseUrl || 'https://split.udhaar.store';
   const effectiveIconUrl = iconUrl || `${effectiveBaseUrl}/static/ic_launcher-web.png`;
-  // Use data URI for immediate inline render, fallback to static URL
   const displayIcon = cachedIconBase64 || '/static/ic_launcher-web.png';
-
-  const modeEmojis = {
-    trip: '✈️',
-    flat: '🏠',
-    friends: '👥',
-    family: '👨‍👩‍👧',
-    event: '🎉'
-  };
-  const modeEmoji = modeEmojis[group.mode] || '👥';
-  const modeLabel = (group.mode ? group.mode.charAt(0).toUpperCase() + group.mode.slice(1) : 'Group') + ' Hisaab';
 
   const groupName = group.name ? escapeHtml(group.name) : 'Split Boss Group';
   const inviterName = inviter.name ? escapeHtml(inviter.name) : 'A friend';
   const memberCount = group.memberCount || 1;
+  const modeLabel = (group.mode ? group.mode.charAt(0).toUpperCase() + group.mode.slice(1) : 'Group') + ' Hisaab';
 
   const pageTitle = isValid
     ? `Join "${groupName}" on Split Boss`
@@ -59,7 +49,7 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
   <link rel="icon" type="image/png" href="${escapeHtml(effectiveIconUrl)}">
   <link rel="apple-touch-icon" href="${escapeHtml(effectiveIconUrl)}">
   
-  <!-- Open Graph & Social Cards -->
+  <!-- Open Graph -->
   <meta property="og:title" content="${pageTitle}">
   <meta property="og:description" content="${pageDesc}">
   <meta property="og:type" content="website">
@@ -69,19 +59,12 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
 
-  <!-- Twitter Meta -->
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="${pageTitle}">
-  <meta name="twitter:description" content="${pageDesc}">
-  <meta name="twitter:image" content="${escapeHtml(effectiveIconUrl)}">
-
-  <!-- Mobile Browser Styling -->
-  <meta name="theme-color" content="#061210">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Mobile Styling -->
+  <meta name="theme-color" content="#FFFFFF">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 
   <style>
     * {
@@ -93,11 +76,9 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
 
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #061210;
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(28, 176, 143, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(5, 150, 105, 0.10) 0px, transparent 50%);
-      color: #F8FAFC;
+      background-color: #F8FAFC;
+      background-image: radial-gradient(at 50% 0%, #E6FAF0 0%, #F8FAFC 65%);
+      color: #0F172A;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -105,57 +86,23 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       justify-content: center;
       padding: 24px 16px;
       position: relative;
-      overflow-x: hidden;
     }
 
-    /* Ambient background emerald glows matching the icon */
-    .glow-top {
-      position: fixed;
-      top: -140px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 520px;
-      height: 520px;
-      background: radial-gradient(circle, rgba(28, 176, 143, 0.24) 0%, rgba(28, 176, 143, 0) 70%);
-      filter: blur(60px);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .glow-bottom {
-      position: fixed;
-      bottom: -160px;
-      right: -80px;
-      width: 460px;
-      height: 460px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0) 70%);
-      filter: blur(65px);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Container Card with Neo-Fintech Glassmorphism */
+    /* Container Card */
     .container {
-      position: relative;
-      z-index: 1;
       width: 100%;
-      max-width: 440px;
-      background: rgba(10, 27, 23, 0.82);
-      border: 1px solid rgba(52, 211, 153, 0.18);
-      border-radius: 30px;
-      padding: 34px 26px;
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      box-shadow: 
-        0 24px 50px -12px rgba(0, 0, 0, 0.75), 
-        0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      max-width: 420px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 24px;
+      padding: 32px 24px;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.02);
       text-align: center;
-      animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: fadeIn 0.35s ease-out;
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(16px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
@@ -163,110 +110,86 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
     .brand-row {
       display: inline-flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       margin-bottom: 24px;
     }
 
     .brand-logo-img {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 12px;
       object-fit: cover;
-      box-shadow: 0 6px 18px rgba(28, 176, 143, 0.35);
-      border: 1px solid rgba(230, 250, 240, 0.4);
+      border: 1px solid #E2E8F0;
       background-color: #E6FAF0;
-      transition: transform 0.25s ease;
-    }
-
-    .brand-row:hover .brand-logo-img {
-      transform: scale(1.05);
     }
 
     .brand-name {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 800;
-      letter-spacing: -0.5px;
-      color: #FFFFFF;
+      letter-spacing: -0.4px;
+      color: #0F172A;
     }
 
     .brand-tag {
       font-size: 11px;
       font-weight: 700;
-      background: rgba(28, 176, 143, 0.16);
-      color: #34D399;
-      padding: 3px 9px;
+      background: #E6FAF0;
+      color: #047857;
+      padding: 3px 8px;
       border-radius: 999px;
-      border: 1px solid rgba(52, 211, 153, 0.32);
-      letter-spacing: 0.3px;
+      border: 1px solid #A7F3D0;
     }
 
     /* Invitation Header Badge */
     .invite-badge {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 6px 14px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(52, 211, 153, 0.2);
+      gap: 6px;
+      padding: 5px 12px;
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
       border-radius: 999px;
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.8px;
-      color: #A7F3D0;
+      letter-spacing: 0.6px;
+      color: #475569;
       text-transform: uppercase;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
     .pulse-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: #10B981;
-      box-shadow: 0 0 10px #10B981;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.75); }
-      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      background: #059669;
     }
 
     /* Group Card */
     .group-hero {
-      background: linear-gradient(180deg, rgba(16, 42, 36, 0.7) 0%, rgba(10, 27, 23, 0.75) 100%);
-      border: 1px solid rgba(52, 211, 153, 0.16);
-      border-radius: 22px;
-      padding: 24px 20px;
-      margin-bottom: 24px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    }
-
-    .group-avatar {
-      font-size: 46px;
-      line-height: 1;
-      margin-bottom: 14px;
-      display: inline-block;
-      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 18px;
+      padding: 22px 18px;
+      margin-bottom: 22px;
     }
 
     .group-title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 800;
-      letter-spacing: -0.5px;
-      color: #FFFFFF;
+      letter-spacing: -0.4px;
+      color: #0F172A;
       margin-bottom: 6px;
       word-break: break-word;
     }
 
     .inviter-line {
       font-size: 13px;
-      color: #94A3B8;
-      margin-bottom: 16px;
+      color: #64748B;
+      margin-bottom: 14px;
     }
 
     .inviter-line strong {
-      color: #F1F5F9;
+      color: #0F172A;
       font-weight: 600;
     }
 
@@ -281,19 +204,19 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
     .meta-tag {
       font-size: 12px;
       font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 10px;
-      background: rgba(28, 176, 143, 0.09);
-      color: #D1FAE5;
-      border: 1px solid rgba(52, 211, 153, 0.16);
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: #FFFFFF;
+      color: #475569;
+      border: 1px solid #E2E8F0;
     }
 
     /* Call To Action Buttons */
     .cta-column {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-bottom: 24px;
+      gap: 10px;
+      margin-bottom: 20px;
     }
 
     .btn-playstore {
@@ -301,37 +224,33 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
-      padding: 16px 22px;
-      border-radius: 18px;
-      background: linear-gradient(135deg, #1CB08F 0%, #059669 100%);
-      color: #051A14;
+      padding: 15px 20px;
+      border-radius: 14px;
+      background: #059669;
+      color: #FFFFFF;
       font-size: 15px;
-      font-weight: 800;
+      font-weight: 700;
       text-decoration: none;
       border: none;
       cursor: pointer;
-      box-shadow: 
-        0 12px 28px -4px rgba(28, 176, 143, 0.48), 
-        inset 0 1px 1px rgba(255, 255, 255, 0.35);
-      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+      transition: background 0.15s ease, transform 0.15s ease;
     }
 
     .btn-playstore:hover {
-      background: linear-gradient(135deg, #22C55E 0%, #059669 100%);
+      background: #047857;
       transform: translateY(-1px);
-      box-shadow: 0 14px 30px -4px rgba(28, 176, 143, 0.6);
     }
 
     .btn-playstore:active {
       transform: scale(0.98);
-      box-shadow: 0 4px 14px rgba(28, 176, 143, 0.4);
     }
 
     .play-icon {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       flex-shrink: 0;
     }
 
@@ -339,43 +258,41 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
       width: 100%;
-      padding: 13px 18px;
-      border-radius: 16px;
-      background: rgba(28, 176, 143, 0.08);
-      color: #E2E8F0;
-      font-size: 14px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      background: #FFFFFF;
+      color: #334155;
+      font-size: 13.5px;
       font-weight: 600;
       text-decoration: none;
-      border: 1px solid rgba(52, 211, 153, 0.22);
+      border: 1px solid #CBD5E1;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background 0.15s ease;
     }
 
-    .btn-openapp:hover, .btn-openapp:active {
-      background: rgba(28, 176, 143, 0.16);
-      border-color: rgba(52, 211, 153, 0.35);
-      color: #FFFFFF;
+    .btn-openapp:hover {
+      background: #F1F5F9;
     }
 
     /* Invite Code Box */
     .code-box {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px dashed rgba(52, 211, 153, 0.24);
-      border-radius: 16px;
+      background: #F8FAFC;
+      border: 1px dashed #CBD5E1;
+      border-radius: 14px;
       padding: 12px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
 
     .code-text {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
-      color: #A7F3D0;
+      font-weight: 600;
+      color: #334155;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -386,8 +303,8 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       font-size: 10px;
       text-transform: uppercase;
       font-weight: 700;
-      color: #6EE7B7;
-      letter-spacing: 0.6px;
+      color: #64748B;
+      letter-spacing: 0.5px;
       display: block;
       margin-bottom: 2px;
       text-align: left;
@@ -395,90 +312,52 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
 
     .btn-copy {
       flex-shrink: 0;
-      padding: 7px 14px;
+      padding: 6px 12px;
       font-size: 12px;
       font-weight: 700;
-      color: #051A14;
-      background: #34D399;
-      border: none;
-      border-radius: 10px;
+      color: #047857;
+      background: #E6FAF0;
+      border: 1px solid #A7F3D0;
+      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.18s ease;
+      transition: background 0.15s ease;
     }
 
     .btn-copy:hover {
-      background: #6EE7B7;
-      transform: translateY(-1px);
+      background: #D1FAE5;
     }
 
-    .btn-copy:active {
-      transform: scale(0.95);
-    }
-
-    /* Feature highlights */
-    .features-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      border-top: 1px solid rgba(52, 211, 153, 0.12);
-      padding-top: 20px;
-      margin-bottom: 14px;
-    }
-
-    .feature-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 5px;
-    }
-
-    .feature-icon {
-      font-size: 20px;
-    }
-
-    .feature-title {
-      font-size: 11px;
-      font-weight: 600;
-      color: #94A3B8;
-    }
-
-    /* UPI trust strip */
+    /* UPI Trust Line */
     .upi-strip {
       font-size: 11px;
       color: #64748B;
-      letter-spacing: 0.2px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
+      font-weight: 500;
     }
 
     .upi-dot {
-      color: #10B981;
-      font-weight: bold;
+      color: #CBD5E1;
     }
 
     /* Toast Notification */
     .toast {
       position: fixed;
-      bottom: 28px;
+      bottom: 24px;
       left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: #0A1B17;
-      color: #F8FAFC;
-      border: 1px solid #1CB08F;
-      padding: 12px 22px;
+      transform: translateX(-50%) translateY(70px);
+      background: #0F172A;
+      color: #FFFFFF;
+      padding: 10px 20px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 600;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
       z-index: 100;
       opacity: 0;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.25s ease;
       pointer-events: none;
       white-space: nowrap;
     }
@@ -488,41 +367,52 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       opacity: 1;
     }
 
-    /* Error state card */
+    /* Error card */
     .error-card {
-      padding: 10px 0;
-    }
-
-    .error-icon {
-      font-size: 46px;
-      margin-bottom: 12px;
+      padding: 14px 0;
     }
 
     .error-title {
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
-      color: #F87171;
+      color: #DC2626;
       margin-bottom: 8px;
     }
 
     .error-desc {
-      font-size: 14px;
-      color: #94A3B8;
+      font-size: 13.5px;
+      color: #64748B;
       line-height: 1.5;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
+    }
+
+    /* Legal link */
+    .footer-link-wrap {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #F1F5F9;
+      font-size: 11px;
+      color: #94A3B8;
+    }
+
+    .footer-link-wrap a {
+      color: #059669;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer-link-wrap a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div class="glow-top"></div>
-  <div class="glow-bottom"></div>
-
   <div class="container">
-    <!-- Brand Title with Official Launcher Icon -->
+    <!-- Brand Header -->
     <div class="brand-row">
       <img 
         src="${displayIcon}" 
-        alt="Split Boss Logo" 
+        alt="Split Boss" 
         class="brand-logo-img" 
         onerror="this.src='/static/ic_launcher-web.png'"
       />
@@ -538,13 +428,12 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       </div>
 
       <div class="group-hero">
-        <div class="group-avatar">${modeEmoji}</div>
         <h1 class="group-title">${groupName}</h1>
         <div class="inviter-line">Invited by <strong>${inviterName}</strong></div>
         <div class="group-meta-tags">
           <span class="meta-tag">${modeLabel}</span>
-          <span class="meta-tag">👥 ${memberCount} ${memberCount === 1 ? 'member' : 'members'}</span>
-          <span class="meta-tag">₹ INR</span>
+          <span class="meta-tag">${memberCount} ${memberCount === 1 ? 'member' : 'members'}</span>
+          <span class="meta-tag">INR</span>
         </div>
       </div>
 
@@ -562,7 +451,7 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
         </a>
 
         <a id="btnOpenApp" href="${escapeHtml(appSchemeUrl)}" class="btn-openapp" onclick="handleOpenAppClick(event)">
-          <span>Already have the app? Open Split Boss</span>
+          <span>Already have the app? Open</span>
         </a>
       </div>
 
@@ -577,9 +466,8 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
     ` : `
       <!-- Expired or Invalid State -->
       <div class="error-card">
-        <div class="error-icon">⚠️</div>
         <h2 class="error-title">Invitation Expired or Invalid</h2>
-        <p class="error-desc">${escapeHtml(preview?.error || 'This invite link may have expired or reached its maximum usage limit. Ask the group admin for a new link.')}</p>
+        <p class="error-desc">${escapeHtml(preview?.error || 'This invite link may have expired or reached its maximum limit. Ask the group admin for a new link.')}</p>
         <div class="cta-column">
           <a href="${escapeHtml(playStoreUrl)}" class="btn-playstore">
             <span>Install Split Boss on Google Play</span>
@@ -588,23 +476,7 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       </div>
     `}
 
-    <!-- App Features Highlights -->
-    <div class="features-list">
-      <div class="feature-item">
-        <div class="feature-icon">⚡</div>
-        <div class="feature-title">Instant UPI</div>
-      </div>
-      <div class="feature-item">
-        <div class="feature-icon">⚖️</div>
-        <div class="feature-title">Equal & Exact</div>
-      </div>
-      <div class="feature-item">
-        <div class="feature-icon">✨</div>
-        <div class="feature-title">100% Free</div>
-      </div>
-    </div>
-
-    <!-- UPI Trust Line -->
+    <!-- UPI Compatibility Notice -->
     <div class="upi-strip">
       <span>GPay</span>
       <span class="upi-dot">•</span>
@@ -616,16 +488,15 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
     </div>
 
     <!-- Legal Footer Link -->
-    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(52, 211, 153, 0.1); font-size: 11px; color: #64748B;">
-      <span>Split Boss • India-First Expense Sharing</span>
-      <span style="margin: 0 6px;">•</span>
-      <a href="/privacy" style="color: #34D399; text-decoration: none; font-weight: 600;">Privacy Policy</a>
+    <div class="footer-link-wrap">
+      <span>Split Boss</span>
+      <span style="margin: 0 4px;">•</span>
+      <a href="/privacy">Privacy Policy</a>
     </div>
   </div>
 
   <div class="toast" id="toast">
-    <span>📋</span>
-    <span id="toastMsg">Invite link copied to clipboard!</span>
+    <span id="toastMsg">Invite link copied to clipboard</span>
   </div>
 
   <script>
@@ -640,7 +511,7 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       if (!toast) return;
       toastMsg.textContent = msg;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 3000);
+      setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
     function copyToClipboard(text) {
@@ -664,25 +535,20 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
     function copyToken() {
       copyToClipboard(webInviteUrl).then(() => {
         const btn = document.getElementById('copyBtn');
-        if (btn) btn.textContent = '✓ Copied';
-        showToast('Invite link copied to clipboard!');
-        setTimeout(() => { if (btn) btn.textContent = 'Copy'; }, 2500);
+        if (btn) btn.textContent = 'Copied';
+        showToast('Invite link copied to clipboard');
+        setTimeout(() => { if (btn) btn.textContent = 'Copy'; }, 2000);
       });
     }
 
     function handleInstallClick(e) {
-      // 1. Copy link & token to clipboard so the app can pick it up on first launch
       copyToClipboard(webInviteUrl);
-      showToast('Invite copied! Redirecting to Google Play...');
-      // Let the natural link navigation proceed to Google Play Store
+      showToast('Invite copied! Redirecting...');
     }
 
     function handleOpenAppClick(e) {
-      // Try opening custom scheme
       copyToClipboard(webInviteUrl);
       window.location.href = appSchemeUrl;
-      
-      // Fallback to Play Store after 1.5s if app is not installed
       setTimeout(() => {
         window.location.href = playStoreUrl;
       }, 1500);
