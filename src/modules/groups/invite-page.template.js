@@ -614,6 +614,13 @@ function renderInvitePage({ preview, token, playStoreUrl, appSchemeUrl, webUrl, 
       <span class="upi-dot">•</span>
       <span>BHIM UPI</span>
     </div>
+
+    <!-- Legal Footer Link -->
+    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(52, 211, 153, 0.1); font-size: 11px; color: #64748B;">
+      <span>Split Boss • India-First Expense Sharing</span>
+      <span style="margin: 0 6px;">•</span>
+      <a href="/privacy" style="color: #34D399; text-decoration: none; font-weight: 600;">Privacy Policy</a>
+    </div>
   </div>
 
   <div class="toast" id="toast">

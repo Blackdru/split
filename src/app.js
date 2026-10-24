@@ -50,6 +50,20 @@ const authLimiter = rateLimit({
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/auth/register', authLimiter);
 
+// Public Legal & Policy Pages (Required for Google Play Store compliance)
+const { renderPrivacyPage } = require('./modules/legal/privacy-page.template');
+const handlePrivacyPolicy = (req, res) => {
+  const baseUrl = process.env.APP_BASE_URL || 'https://split.udhaar.store';
+  const html = renderPrivacyPage({
+    baseUrl,
+    iconUrl: `${baseUrl}/static/ic_launcher-web.png`
+  });
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send(html);
+};
+app.get('/privacy', handlePrivacyPolicy);
+app.get('/privacy-policy', handlePrivacyPolicy);
+
 // Public Web Invite Landing Pages
 const GroupsController = require('./modules/groups/groups.controller');
 app.get('/join/:token', GroupsController.renderInviteLanding);
