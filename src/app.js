@@ -64,6 +64,26 @@ const handlePrivacyPolicy = (req, res) => {
 app.get('/privacy', handlePrivacyPolicy);
 app.get('/privacy-policy', handlePrivacyPolicy);
 
+// Public Web Landing Page (https://split.udhaar.store)
+const { renderHomePage } = require('./modules/landing/home-page.template');
+app.get('/', (req, res) => {
+  if (req.headers.accept && req.headers.accept.includes('application/json') && !req.headers.accept.includes('text/html')) {
+    return res.status(200).json({ success: true, message: 'Split Boss API is active' });
+  }
+
+  const baseUrl = process.env.APP_BASE_URL || 'https://split.udhaar.store';
+  const pkg = process.env.PLAY_STORE_PACKAGE || 'com.budrock.splitboss';
+  const playStoreUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
+  const html = renderHomePage({
+    baseUrl,
+    playStoreUrl,
+    iconUrl: `${baseUrl}/static/ic_launcher-web.png`
+  });
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send(html);
+});
+
 // Public Web Invite Landing Pages
 const GroupsController = require('./modules/groups/groups.controller');
 app.get('/join/:token', GroupsController.renderInviteLanding);
