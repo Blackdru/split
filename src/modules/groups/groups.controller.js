@@ -100,13 +100,17 @@ class GroupsController {
         return res.status(200).json({ success: true, data: preview });
       }
 
+      const iconUrl = `${baseUrl}/static/ic_launcher-web.png`;
+
       // Return high-converting branded HTML landing page
       const html = renderInvitePage({
         preview,
         token,
         playStoreUrl,
         appSchemeUrl,
-        webUrl
+        webUrl,
+        baseUrl,
+        iconUrl
       });
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');

@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -6,6 +7,10 @@ const apiRoutes = require('./routes/api');
 const { errorHandler } = require('./middleware/error-handler');
 
 const app = express();
+
+// Static assets (branding, icons, preview assets)
+app.use('/static', express.static(path.join(__dirname, '../public')));
+app.use('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, '../public/favicon.png')));
 
 // Security middleware
 app.use(
